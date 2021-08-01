@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+option go_package = ".;generated";
+
+import "google/protobuf/timestamp.proto";
+
+
+service PipelineService {
+    rpc NewTickerPipeline(stream NewTickerPipelineRequest) returns (NewTickerPipelineResponse) {};
+}
+
+message NewTickerPipelineRequest{
+    string Symbol    =1;
+	double Bid       =2;
+	double Ask       =3;
+	double BidSize   =4;
+	double AskSize   =5;
+	double Last      =6;
+	google.protobuf.Timestamp Timestamp =7;
+}
+
+message NewTickerPipelineResponse{
+    string success =1;
+}

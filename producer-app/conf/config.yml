@@ -1,0 +1,8 @@
+name: account-service
+log:
+  level: debug
+  format: default
+server:
+  port: 7071
+endpoints:
+  serverEndpoint: 127.0.0.1:7072

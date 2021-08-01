@@ -1,0 +1,17 @@
+
+grpc 
+
+rabbit mq worker
+
+interface
+
+unit testing 
+
+influx db
+
+publish data to queue every batch size 100
+
+2 type of client
+- grpc -> pipeline
+- queue -> pipeline
+

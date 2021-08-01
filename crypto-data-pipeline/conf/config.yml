@@ -1,0 +1,17 @@
+name: account-service
+log:
+  level: debug
+  format: json
+secret: some-cool-secret-that-is-32bytes
+database:
+  endpoint: mariadb
+  port: 3306
+  username: root
+  password: password
+  name: account
+  auto-migrate: true
+server:
+  http:
+    port: 7073
+  grpc:
+    port: 7072
