@@ -43,17 +43,11 @@ func main() {
 
 	// start server
 	go grpcServ.Start()
-	// go graceFulShutdown(cancel)
 
 	<-terminateChan
 	fmt.Println("received shutdown signal")
-	// cancel()
-	// wg.Wait()
-	// grpcServ.Stop()
+	fmt.Println("start gracefully shutdown process")
 
-	// graceFulShutdown(cancel)
 	cancel()
-	fmt.Println("stop")
-	// _ = cancel
 	grpcServ.Stop()
 }

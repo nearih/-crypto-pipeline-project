@@ -1,11 +1,11 @@
 package services
 
 import (
-	"errors"
 	"io"
 	"producer-app/generated"
 	"producer-app/server"
 	"producer-app/util/log"
+	"strings"
 	"sync"
 
 	"github.com/go-numb/go-ftx/realtime"
@@ -89,13 +89,10 @@ func (s *Services) getTickerData(ctx context.Context, ticker []string) (<-chan e
 				Timestamp: timestamppb.New(v.Ticker.Time.Time),
 			}
 
-			fmt.Printf("%+v \n", res)
+			// fmt.Printf("%+v \n", res)
 			err = stream.Send(res)
 			if err != nil {
-				if err == io.EOF {
-					fmt.Println("eofff")
-					ers := errors.New("EOFFFFF")
-					errCh <- ers
+				if err == io.EOF || strings.Contains(err.Error(), context.Canceled.Error()) {
 					return errCh, nil
 				}
 				errCh <- err

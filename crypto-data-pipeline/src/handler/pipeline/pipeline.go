@@ -50,7 +50,7 @@ func (c *PipelineController) NewTickerPipeline(stream generated.PipelineService_
 	errChan = c.WorkerService.Publish(ctx, data, c.wg)
 	errChanList = append(errChanList, errChan)
 
-	fmt.Println("closed pipeline")
+	fmt.Println("pipeline is closed")
 	return HandleErrorChanels(errChanList...)
 }
 
@@ -75,7 +75,6 @@ func (c *PipelineController) formatData(ctx context.Context, stream generated.Pi
 				in, err := stream.Recv()
 				if err != nil {
 					if err == io.EOF || strings.Contains(err.Error(), context.Canceled.Error()) {
-						// if err == io.EOF {
 						return
 					}
 					fmt.Println("UploadData err:", err)
