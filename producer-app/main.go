@@ -2,13 +2,16 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"producer-app/config"
 	"producer-app/server"
 	"producer-app/src/handlers"
+	"producer-app/src/repository/grpcRepo"
 	"producer-app/src/services"
 	"producer-app/util/log"
+	"sync"
 )
 
 func main() {
@@ -20,12 +23,16 @@ func main() {
 
 	// create global context
 	ctx, cancel := context.WithCancel(context.Background())
+	wg := &sync.WaitGroup{}
 
 	// create grpc connection instance
-	conn := server.NewGRPCClient(conf, logger)
+	grpcConn := server.NewGRPCClient(conf, logger)
+
+	// create repository instance
+	grpcRepo := grpcRepo.NewGrpcRepo(logger, grpcConn)
 
 	// create services instance
-	serv := services.NewServices(logger, conn)
+	serv := services.NewServices(logger, grpcConn, wg, grpcRepo)
 
 	// create http server
 	httpServer := server.NewHttpServer()
@@ -37,7 +44,9 @@ func main() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt)
 	<-quit
-	cancel()
+	fmt.Println("received shutdown signal")
+	fmt.Println("start gracefully shutdown process")
 
+	cancel()
 	httpServer.Stop()
 }

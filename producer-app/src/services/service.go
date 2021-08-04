@@ -1,61 +1,60 @@
 package services
 
 import (
-	"io"
-	"producer-app/generated"
 	"producer-app/server"
+	"producer-app/src/model"
+	"producer-app/src/repository/grpcRepo"
 	"producer-app/util/log"
-	"strings"
 	"sync"
 
 	"github.com/go-numb/go-ftx/realtime"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"context"
 	"fmt"
 )
 
 type Services struct {
-	log  *log.Logger
-	grpc *server.GrpcClient
+	log      *log.Logger
+	wg       *sync.WaitGroup
+	grpcRepo *grpcRepo.GrpcRepo
 }
 
-func NewServices(log *log.Logger, grpc *server.GrpcClient) *Services {
+func NewServices(log *log.Logger, grpc *server.GrpcClient, wg *sync.WaitGroup, grpcRepo *grpcRepo.GrpcRepo) *Services {
 	return &Services{
-		log:  log,
-		grpc: grpc,
+		log:      log,
+		wg:       wg,
+		grpcRepo: grpcRepo,
 	}
 }
 
 func (s *Services) UploadData(ctx context.Context, symbol string) error {
 	s.log.Info("[service] UploadData: ", symbol)
 
-	if s.grpc.ClientCon == nil {
-		s.grpc.ConnectGrpcServer()
-	}
+	var errChanList []<-chan error
 
-	var errcList []<-chan error
-
-	errCh, err := s.getTickerData(ctx, []string{symbol})
+	data, errCh, err := s.getTickerData(ctx, []string{symbol})
 	if err != nil {
 		return err
 	}
-	errcList = append(errcList, errCh)
-	return HandleErrorChanels(errcList...)
+	errChanList = append(errChanList, errCh)
+
+	errCh, err = s.grpcRepo.SendDataGrpc(ctx, data)
+	if err != nil {
+		return err
+	}
+	errChanList = append(errChanList, errCh)
+
+	fmt.Println("closed connection with pipeline")
+	return HandleErrorChanels(errChanList...)
 }
 
-func (s *Services) getTickerData(ctx context.Context, ticker []string) (<-chan error, error) {
-
-	stream, err := s.grpc.PipelineService.NewTickerPipeline(ctx)
-	if err != nil {
-		return nil, err
-	}
+func (s *Services) getTickerData(ctx context.Context, ticker []string) (chan model.Ticker, chan error, error) {
+	s.wg.Add(1)
 
 	ch := make(chan realtime.Response)
+	data := make(chan model.Ticker)
 	errCh := make(chan error, 1)
-	defer close(ch)
-	defer close(errCh)
-	defer stream.CloseAndRecv()
+
 	go func() {
 		err := realtime.Connect(ctx, ch, []string{"ticker"}, ticker, nil)
 		if err != nil {
@@ -63,43 +62,41 @@ func (s *Services) getTickerData(ctx context.Context, ticker []string) (<-chan e
 			errCh <- err
 			return
 		}
-	}()
 
-	// for v := range ch {
-	for {
-		select {
-		case <-ctx.Done():
-			return errCh, nil
-		default:
-			v := <-ch
-
-			// v.Results is error
-			if v.Results != nil {
-				errCh <- fmt.Errorf("symbol not found")
-				break
-			}
-
-			res := &generated.NewTickerPipelineRequest{
-				Symbol:    v.Symbol,
-				Bid:       v.Ticker.Bid,
-				Ask:       v.Ticker.Ask,
-				BidSize:   v.Ticker.BidSize,
-				AskSize:   v.Ticker.AskSize,
-				Last:      v.Ticker.Last,
-				Timestamp: timestamppb.New(v.Ticker.Time.Time),
-			}
-
-			// fmt.Printf("%+v \n", res)
-			err = stream.Send(res)
-			if err != nil {
-				if err == io.EOF || strings.Contains(err.Error(), context.Canceled.Error()) {
-					return errCh, nil
+		defer s.wg.Done()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				v := <-ch
+				if v.Results != nil {
+					errCh <- fmt.Errorf("symbol not found")
+					return
 				}
-				errCh <- err
-				return errCh, nil
+
+				res := model.Ticker{
+					Symbol:    v.Symbol,
+					Bid:       v.Ticker.Bid,
+					Ask:       v.Ticker.Ask,
+					BidSize:   v.Ticker.BidSize,
+					AskSize:   v.Ticker.AskSize,
+					Last:      v.Ticker.Last,
+					Timestamp: v.Ticker.Time.Time,
+				}
+				data <- res
 			}
 		}
-	}
+	}()
+
+	go func() {
+		s.wg.Wait()
+		close(errCh)
+		close(data)
+		close(ch)
+	}()
+
+	return data, errCh, nil
 }
 
 func HandleErrorChanels(errs ...<-chan error) error {

@@ -43,7 +43,7 @@ func (c *PipelineController) NewTickerPipeline(stream generated.PipelineService_
 	var errChanList []<-chan error
 
 	// format data and create data channel
-	data, errChan := c.formatData(ctx, stream, c.wg)
+	data, errChan := c.formatData(ctx, stream)
 	errChanList = append(errChanList, errChan)
 
 	// publish to related service
@@ -55,18 +55,18 @@ func (c *PipelineController) NewTickerPipeline(stream generated.PipelineService_
 }
 
 // formatData formate data before the data is send to service, format function is here because it is grpc related
-func (c *PipelineController) formatData(ctx context.Context, stream generated.PipelineService_NewTickerPipelineServer, wg *sync.WaitGroup) (chan model.Ticker, chan error) {
+func (c *PipelineController) formatData(ctx context.Context, stream generated.PipelineService_NewTickerPipelineServer) (chan model.Ticker, chan error) {
 
 	errChan := make(chan error, 1)
 	data := make(chan model.Ticker)
 
-	wg.Add(1)
+	c.wg.Add(1)
 	defer stream.SendAndClose(&generated.NewTickerPipelineResponse{
 		Success: "done",
 	})
 
 	go func() {
-		defer wg.Done()
+		defer c.wg.Done()
 		for {
 			select {
 			case <-ctx.Done():
@@ -98,7 +98,7 @@ func (c *PipelineController) formatData(ctx context.Context, stream generated.Pi
 	}()
 
 	go func() {
-		wg.Wait()
+		c.wg.Wait()
 		close(errChan)
 		close(data)
 	}()
