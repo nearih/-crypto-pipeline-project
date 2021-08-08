@@ -7,6 +7,7 @@ import (
 	"crypto-data-pipeline/src/service/worker"
 	"fmt"
 	"io"
+	"log"
 	"strings"
 	"sync"
 )
@@ -77,7 +78,7 @@ func (c *PipelineController) formatData(ctx context.Context, stream generated.Pi
 					if err == io.EOF || strings.Contains(err.Error(), context.Canceled.Error()) {
 						return
 					}
-					fmt.Println("UploadData err:", err)
+					log.Println("UploadData err:", err)
 					errChan <- fmt.Errorf("UploadData err: %v", err)
 					return
 				}
@@ -91,7 +92,6 @@ func (c *PipelineController) formatData(ctx context.Context, stream generated.Pi
 					Last:      in.Last,
 					Timestamp: in.Timestamp.AsTime(),
 				}
-				// fmt.Println("service input: ", serviceInput)
 				data <- serviceInput
 			}
 		}
