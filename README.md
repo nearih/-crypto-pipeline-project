@@ -34,3 +34,7 @@ producer-app -> crypto-data-pipeline -> influxDb -> grafana
     ```make dev```
 
 4. send request shown in command.txt in producer-app to start the pipeline 
+
+# Benchmark 
+
+benchmark of this pipeline was tested and this result is a picture in folder benchmark in crypto-data-pipeline
