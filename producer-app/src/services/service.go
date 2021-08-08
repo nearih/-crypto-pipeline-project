@@ -3,7 +3,7 @@ package services
 import (
 	"producer-app/server"
 	"producer-app/src/model"
-	"producer-app/src/repository/grpcRepo"
+	grpcRepo "producer-app/src/repository/grpcrepo"
 	"producer-app/util/log"
 	"sync"
 
@@ -27,6 +27,7 @@ func NewServices(log *log.Logger, grpc *server.GrpcClient, wg *sync.WaitGroup, g
 	}
 }
 
+// UploadData upload data to pipeline
 func (s *Services) UploadData(ctx context.Context, symbol string) error {
 	s.log.Info("[service] UploadData: ", symbol)
 
@@ -38,7 +39,7 @@ func (s *Services) UploadData(ctx context.Context, symbol string) error {
 	}
 	errChanList = append(errChanList, errCh)
 
-	errCh, err = s.grpcRepo.SendDataGrpc(ctx, data)
+	errCh, err = s.grpcRepo.SendDataGrpcStream(ctx, data)
 	if err != nil {
 		return err
 	}
@@ -99,6 +100,7 @@ func (s *Services) getTickerData(ctx context.Context, ticker []string) (chan mod
 	return data, errCh, nil
 }
 
+// HandleErrorChanels read all error from giving channel and return
 func HandleErrorChanels(errs ...<-chan error) error {
 	errc := mergeError(errs...)
 	for err := range errc {

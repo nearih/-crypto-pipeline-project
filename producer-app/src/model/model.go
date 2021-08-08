@@ -11,3 +11,7 @@ type Ticker struct {
 	Last      float64
 	Timestamp time.Time
 }
+
+type Request struct {
+	Symbol string `json:"symbol"`
+}

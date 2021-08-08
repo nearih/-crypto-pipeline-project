@@ -1,0 +1,18 @@
+
+send data to pipeline with this command
+
+curl --location --request POST 'localhost:7071/getdata' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "symbol": "FTT/USD"
+}'
+
+
+example symbol
+"BTC/USD"
+'FTT/USD"
+"ETH/USDT"
+"XRP/USD"
+"BTC/ETH
+
+

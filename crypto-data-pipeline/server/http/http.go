@@ -15,9 +15,6 @@ type HttpServer struct {
 func NewHttpServer() *HttpServer {
 	e := echo.New()
 
-	// Add static file
-	// e.Use(middleware.CORS())
-
 	return &HttpServer{e}
 }
 
@@ -26,7 +23,6 @@ func (sv *HttpServer) Start(port int) {
 		port = 9090
 	}
 	sv.Echo.Start(fmt.Sprintf(":%d", port))
-
 }
 
 func (sv *HttpServer) Stop() error {

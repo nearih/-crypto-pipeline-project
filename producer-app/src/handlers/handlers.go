@@ -3,7 +3,9 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"producer-app/server"
+	"producer-app/src/model"
 	"producer-app/src/services"
 
 	"github.com/labstack/echo"
@@ -30,7 +32,7 @@ func NewHandlers(ctx context.Context, e *server.HttpServer, s *services.Services
 
 func (h *Handlers) registerHandler() {
 	h.HttpServer.Echo.GET("/ping", h.Ping())
-	h.HttpServer.Echo.GET("/getdata", h.GetData())
+	h.HttpServer.Echo.POST("/getdata", h.GetData())
 }
 
 func (h *Handlers) Ping() echo.HandlerFunc {
@@ -41,7 +43,11 @@ func (h *Handlers) Ping() echo.HandlerFunc {
 
 func (h *Handlers) GetData() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		symbol := c.QueryParam("symbol")
+		var req model.Request
+		err := c.Bind(&req)
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, err)
+		}
 		ctx, cancel := context.WithCancel(c.Request().Context())
 		defer cancel()
 
@@ -50,11 +56,11 @@ func (h *Handlers) GetData() echo.HandlerFunc {
 			cancel()
 		}()
 
-		err := h.Services.UploadData(ctx, symbol)
+		err = h.Services.UploadData(ctx, req.Symbol)
 		if err != nil {
-			return c.JSON(500, fmt.Sprintf("error: %v", err))
+			return c.JSON(http.StatusInternalServerError, fmt.Sprintf("error: %v", err))
 		}
-		return c.JSON(200, fmt.Sprintf("get data from %v", symbol))
+		return c.JSON(http.StatusOK, fmt.Sprintf("get data from %v", req.Symbol))
 	}
 
 }

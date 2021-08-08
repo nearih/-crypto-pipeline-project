@@ -32,7 +32,7 @@ func (gs *GRPCServer) Stop() {
 	gs.Server.GracefulStop()
 }
 
-// NewGRPCServer .
+// NewGRPCServer create grpc instance
 func NewGRPCServer(c *config.RootConfig) *GRPCServer {
 	return &GRPCServer{
 		config: c,

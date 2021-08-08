@@ -14,10 +14,6 @@ type HttpServer struct {
 
 func NewHttpServer() *HttpServer {
 	e := echo.New()
-
-	// Add static file
-	// e.Use(middleware.CORS())
-
 	return &HttpServer{e}
 }
 

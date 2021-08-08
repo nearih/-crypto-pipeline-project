@@ -8,7 +8,7 @@ import (
 	"producer-app/config"
 	"producer-app/server"
 	"producer-app/src/handlers"
-	"producer-app/src/repository/grpcRepo"
+	grpcRepo "producer-app/src/repository/grpcrepo"
 	"producer-app/src/services"
 	"producer-app/util/log"
 	"sync"

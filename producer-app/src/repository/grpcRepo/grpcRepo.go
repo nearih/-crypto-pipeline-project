@@ -1,4 +1,4 @@
-package grpcRepo
+package grpcrepo
 
 import (
 	"context"
@@ -24,7 +24,8 @@ func NewGrpcRepo(log *log.Logger, grpc *server.GrpcClient) *GrpcRepo {
 	}
 }
 
-func (s *GrpcRepo) SendDataGrpc(ctx context.Context, data chan model.Ticker) (chan error, error) {
+// SendDataGrpcStream stream ticker data to pipeline
+func (s *GrpcRepo) SendDataGrpcStream(ctx context.Context, data chan model.Ticker) (chan error, error) {
 
 	if s.grpc.ClientCon == nil {
 		s.grpc.ConnectGrpcServer()
@@ -50,7 +51,6 @@ func (s *GrpcRepo) SendDataGrpc(ctx context.Context, data chan model.Ticker) (ch
 			Timestamp: timestamppb.New(v.Timestamp),
 		}
 
-		// fmt.Printf("%+v \n", res)
 		err = stream.Send(res)
 		if err != nil {
 			if err == io.EOF || strings.Contains(err.Error(), context.Canceled.Error()) {
